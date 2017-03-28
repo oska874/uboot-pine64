@@ -31,3 +31,13 @@
 # Debug files
 *.dSYM/
 *.su
+
+*.bin
+*.dtb
+*.img
+*.cmd
+*.tmp
+*.map
+spl/
+tags
+u-boot
