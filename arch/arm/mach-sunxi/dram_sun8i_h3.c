@@ -617,26 +617,16 @@ unsigned long sunxi_dram_init(void)
 		.row_bits = 15,
 		.page_size = 4096,
 
-#if defined(CONFIG_MACH_SUN8I_H3)
-		.dx_read_delays  = SUN8I_H3_DX_READ_DELAYS,
-		.dx_write_delays = SUN8I_H3_DX_WRITE_DELAYS,
-		.ac_delays	 = SUN8I_H3_AC_DELAYS,
-#elif defined(CONFIG_MACH_SUN50I)
 		.dx_read_delays  = SUN50I_A64_DX_READ_DELAYS,
 		.dx_write_delays = SUN50I_A64_DX_WRITE_DELAYS,
 		.ac_delays	 = SUN50I_A64_AC_DELAYS,
-#endif
 	};
 /*
  * Let the compiler optimize alternatives away by passing this value into
  * the static functions. This saves us #ifdefs, but still keeps the binary
  * small.
  */
-#if defined(CONFIG_MACH_SUN8I_H3)
-	uint16_t socid = SOCID_H3;
-#elif defined(CONFIG_MACH_SUN50I)
 	uint16_t socid = SOCID_A64;
-#endif
 
 	mctl_sys_init(socid, &para);
 	if (mctl_channel_init(socid, &para))

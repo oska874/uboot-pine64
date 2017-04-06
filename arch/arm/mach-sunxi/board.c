@@ -147,54 +147,6 @@ SPL_LOAD_IMAGE_METHOD("FEL", 0, BOOT_DEVICE_BOARD, spl_board_load_image);
 
 void s_init(void)
 {
-	/*
-	 * Undocumented magic taken from boot0, without this DRAM
-	 * access gets messed up (seems cache related).
-	 * The boot0 sources describe this as: "config ema for cache sram"
-	 */
-#if defined CONFIG_MACH_SUN6I
-	setbits_le32(SUNXI_SRAMC_BASE + 0x44, 0x1800);
-#elif defined CONFIG_MACH_SUN8I
-	__maybe_unused uint version;
-
-	/* Unlock sram version info reg, read it, relock */
-	setbits_le32(SUNXI_SRAMC_BASE + 0x24, (1 << 15));
-	version = readl(SUNXI_SRAMC_BASE + 0x24) >> 16;
-	clrbits_le32(SUNXI_SRAMC_BASE + 0x24, (1 << 15));
-
-	/*
-	 * Ideally this would be a switch case, but we do not know exactly
-	 * which versions there are and which version needs which settings,
-	 * so reproduce the per SoC code from the BSP.
-	 */
-#if defined CONFIG_MACH_SUN8I_A23
-	if (version == 0x1650)
-		setbits_le32(SUNXI_SRAMC_BASE + 0x44, 0x1800);
-	else /* 0x1661 ? */
-		setbits_le32(SUNXI_SRAMC_BASE + 0x44, 0xc0);
-#elif defined CONFIG_MACH_SUN8I_A33
-	if (version != 0x1667)
-		setbits_le32(SUNXI_SRAMC_BASE + 0x44, 0xc0);
-#endif
-	/* A83T BSP never modifies SUNXI_SRAMC_BASE + 0x44 */
-	/* No H3 BSP, boot0 seems to not modify SUNXI_SRAMC_BASE + 0x44 */
-#endif
-
-#if defined CONFIG_MACH_SUN6I || \
-    defined CONFIG_MACH_SUN7I || \
-    defined CONFIG_MACH_SUN8I || \
-    defined CONFIG_MACH_SUN9I
-	/* Enable SMP mode for CPU0, by setting bit 6 of Auxiliary Ctl reg */
-	asm volatile(
-		"mrc p15, 0, r0, c1, c0, 1\n"
-		"orr r0, r0, #1 << 6\n"
-		"mcr p15, 0, r0, c1, c0, 1\n");
-#endif
-#if defined CONFIG_MACH_SUN6I || defined CONFIG_MACH_SUN8I_H3
-	/* Enable non-secure access to some peripherals */
-	tzpc_init();
-#endif
-
 	clock_init();
 	timer_init();
 	gpio_init();

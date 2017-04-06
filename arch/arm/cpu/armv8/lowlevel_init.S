@@ -14,7 +14,7 @@ ENTRY(lowlevel_init)
 	 * Setup a temporary stack. Global data is not available yet.
 	 */
 #if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_STACK)
-	ldr	w0, =CONFIG_SPL_STACK
+	ldr	w0, =CONFIG_SPL_STACK 
 #else
 	ldr	w0, =CONFIG_SYS_INIT_SP_ADDR
 #endif
@@ -23,6 +23,7 @@ ENTRY(lowlevel_init)
 	/*
 	 * Save the old LR(passed in x29) and the current LR to stack
 	 */
+    /*x29 is sp???*/
 	stp	x29, x30, [sp, #-16]!
 
 	/*

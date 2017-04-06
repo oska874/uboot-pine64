@@ -7,11 +7,7 @@
 #ifndef _SUNXI_CPU_H
 #define _SUNXI_CPU_H
 
-#if defined(CONFIG_MACH_SUN9I)
-#include <asm/arch/cpu_sun9i.h>
-#else
 #include <asm/arch/cpu_sun4i.h>
-#endif
 
 #define SOCID_A64	0x1689
 #define SOCID_H3	0x1680

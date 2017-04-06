@@ -181,13 +181,11 @@ int spl_init(void)
  */
 #if defined(CONFIG_SYS_MALLOC_F_LEN) && \
 	!defined(CONFIG_SPL_STACK_R_MALLOC_SIMPLE_LEN)
-#ifdef CONFIG_MALLOC_F_ADDR
-	gd->malloc_base = CONFIG_MALLOC_F_ADDR;
-#endif
 	gd->malloc_limit = CONFIG_SYS_MALLOC_F_LEN;
 	gd->malloc_ptr = 0;
 #endif
 	if (CONFIG_IS_ENABLED(OF_CONTROL) && !CONFIG_IS_ENABLED(OF_PLATDATA)) {
+        printf("fdtdec setup %d\n",__LINE__);
 		ret = fdtdec_setup();
 		if (ret) {
 			debug("fdtdec_setup() returned error %d\n", ret);
@@ -195,6 +193,7 @@ int spl_init(void)
 		}
 	}
 	if (IS_ENABLED(CONFIG_SPL_DM)) {
+        printf("platdata %d\n",__LINE__);
 		/* With CONFIG_SPL_OF_PLATDATA, bring in all devices */
 		ret = dm_init_and_scan(!CONFIG_IS_ENABLED(OF_PLATDATA));
 		if (ret) {
@@ -202,7 +201,7 @@ int spl_init(void)
 			return ret;
 		}
 	}
-	gd->flags |= GD_FLG_SPL_INIT;
+	gd->flags |= GD_FLG_SPL_INIT; /*marked as SPLed*/
 
 	return 0;
 }

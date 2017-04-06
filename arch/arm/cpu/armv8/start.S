@@ -58,6 +58,7 @@ reset:
 save_boot_params_ret:
 
 #ifdef CONFIG_SYS_RESET_SCTRL
+#error "nnn"
 	bl reset_sctrl
 #endif
 	/*
@@ -65,7 +66,8 @@ save_boot_params_ret:
 	 * Little Endian, MMU Disabled, i/dCache Disabled
 	 */
 	adr	x0, vectors
-	switch_el x1, 3f, 2f, 1f
+	switch_el x1, 3f, 2f, 1f    /*just check ,no switch*/
+/*set up interrupt vector and enable float point support,and counter-timer*/
 3:	msr	vbar_el3, x0
 	mrs	x0, scr_el3
 	orr	x0, x0, #0xf			/* SCR_EL3.NS|IRQ|FIQ|EA */
@@ -90,14 +92,12 @@ save_boot_params_ret:
 	 * This register is not architectural but at the moment
 	 * this bit should be set for A53/A57/A72.
 	 */
+/*should be enabled if using more than one core*/
 #ifdef CONFIG_ARMV8_SET_SMPEN
 	mrs     x0, S3_1_c15_c2_1               /* cpuactlr_el1 */
 	orr     x0, x0, #0x40
 	msr     S3_1_c15_c2_1, x0
 #endif
-
-	/* Apply ARM core specific erratas */
-	bl	apply_core_errata
 
 	/*
 	 * Cache/BPB/TLB Invalidate
@@ -109,6 +109,9 @@ save_boot_params_ret:
 	/* Processor specific initialization */
 	bl	lowlevel_init
 
+/*this may be used in multi-core cpu that more than one core start simutaneously,
+  then except the core0 is master,others're slave and should handled seperatly*/
+/*no use here*/
 #if defined(CONFIG_ARMV8_SPIN_TABLE) && !defined(CONFIG_SPL_BUILD)
 	branch_if_master x0, x1, master_cpu
 	b	spin_table_secondary_jump
@@ -161,67 +164,6 @@ reset_sctrl:
 	b	__asm_invalidate_tlb_all
 	ret
 #endif
-
-/*-----------------------------------------------------------------------*/
-
-WEAK(apply_core_errata)
-
-	mov	x29, lr			/* Save LR */
-	/* For now, we support Cortex-A57 specific errata only */
-
-	/* Check if we are running on a Cortex-A57 core */
-	branch_if_a57_core x0, apply_a57_core_errata
-0:
-	mov	lr, x29			/* Restore LR */
-	ret
-
-apply_a57_core_errata:
-
-#ifdef CONFIG_ARM_ERRATA_828024
-	mrs	x0, S3_1_c15_c2_0	/* cpuactlr_el1 */
-	/* Disable non-allocate hint of w-b-n-a memory type */
-	orr	x0, x0, #1 << 49
-	/* Disable write streaming no L1-allocate threshold */
-	orr	x0, x0, #3 << 25
-	/* Disable write streaming no-allocate threshold */
-	orr	x0, x0, #3 << 27
-	msr	S3_1_c15_c2_0, x0	/* cpuactlr_el1 */
-#endif
-
-#ifdef CONFIG_ARM_ERRATA_826974
-	mrs	x0, S3_1_c15_c2_0	/* cpuactlr_el1 */
-	/* Disable speculative load execution ahead of a DMB */
-	orr	x0, x0, #1 << 59
-	msr	S3_1_c15_c2_0, x0	/* cpuactlr_el1 */
-#endif
-
-#ifdef CONFIG_ARM_ERRATA_833471
-	mrs	x0, S3_1_c15_c2_0	/* cpuactlr_el1 */
-	/* FPSCR write flush.
-	 * Note that in some cases where a flush is unnecessary this
-	    could impact performance. */
-	orr	x0, x0, #1 << 38
-	msr	S3_1_c15_c2_0, x0	/* cpuactlr_el1 */
-#endif
-
-#ifdef CONFIG_ARM_ERRATA_829520
-	mrs	x0, S3_1_c15_c2_0	/* cpuactlr_el1 */
-	/* Disable Indirect Predictor bit will prevent this erratum
-	    from occurring
-	 * Note that in some cases where a flush is unnecessary this
-	    could impact performance. */
-	orr	x0, x0, #1 << 4
-	msr	S3_1_c15_c2_0, x0	/* cpuactlr_el1 */
-#endif
-
-#ifdef CONFIG_ARM_ERRATA_833069
-	mrs	x0, S3_1_c15_c2_0	/* cpuactlr_el1 */
-	/* Disable Enable Invalidates of BTB bit */
-	and	x0, x0, #0xE
-	msr	S3_1_c15_c2_0, x0	/* cpuactlr_el1 */
-#endif
-	b 0b
-ENDPROC(apply_core_errata)
 
 /*-----------------------------------------------------------------------*/
 
